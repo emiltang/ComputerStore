@@ -1,0 +1,85 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[danish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{noto} 
+\usepackage{sourcecodepro}
+\usepackage{fullpage}
+\usepackage{color}
+\usepackage{listings}
+\usepackage{setspace}
+\onehalfspacing
+\usepackage{graphicx}
+
+
+
+\lstset{
+    language=sql,
+    basicstyle=\scriptsize\ttfamily,
+    breaklines=true,
+    showtabs=false,
+    showspaces=false,
+    breakatwhitespace=true,
+    numbers=left,
+    captionpos=b,
+    numberstyle=\scriptsize\ttfamily,
+    keywordstyle=\bfseries\color{blue},
+    commentstyle=\color{green},
+    stringstyle=\color{red}
+}
+
+\title{\textbf{Database Design og Programming Eksamens Projekt}}
+\author{Emil Tang Kristensen}
+\date{23. marts 2017}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Introduktion}
+Denne rapport dokumenterer det individuelle eksamensprojekt i faget \emph{Database Design og Programmering}.
+Projektet er udarbejdet som en del af 2. semester på uddannelsen \emph{Software Engineering} der udbydes af \emph{Syddansk Universitet}.
+
+
+\section{Entity Relationship Model}
+
+\begin{lstlisting}[caption=Some Code]
+SELECT ComputerSystems.name, Components.name, Components.price * 1.3 AS price
+FROM ComputerSystems LEFT JOIN Components ON
+ComputerSystems.cpu = Components.id OR
+ComputerSystems.ram = Components.id OR
+ComputerSystems.mainBoard = Components.id OR
+ComputerSystems.computerCase = Components.id OR
+ComputerSystems.gpu = Components.id
+\end{lstlisting}
+
+\section{Brugermanual}
+
+\section{Tests}
+
+\begin{thebibliography}{9}
+
+\bibitem{Ullman}
+Jeffrey D. Ullman, Hector Garcia-Molina, Jennifer Widom,
+\emph{Database Systems the Complete Book Second Edition},
+Department of Computer Science Stanford University,
+Pearson.
+
+\bibitem{Liang}
+Y. Daniel Liang,
+\emph{Introduction to Java Programming Comprehensive Verson 10. Edition},
+Armstrong Atlantic State University,
+Pearson.
+
+\end{thebibliography}
+
+\appendix
+\section{Entity Relationship Model}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{ER}
+  \caption{ image}
+\end{figure}
+
+\end{document}
+
