@@ -45,10 +45,10 @@ INSERT INTO ComputerCases (id, formFactor) VALUES
   (402, 'mATX'),
   (436, 'ATX');
 
-INSERT INTO Mainboards (id, hasOnBoardGPU, socket, formFactor, ramType, busSpeed) VALUES
-  (749, TRUE, 'LGA1151', 'ATX', 'DDR4', 2133),
-  (336, TRUE, 'LGA1150', 'mATX', 'DDR3', 1600),
-  (572, FALSE, 'AM4', 'ATX', 'DDR4', 3200);
+INSERT INTO Mainboards (id, hasOnBoardGPU, socket, formFactor, ramType) VALUES
+  (749, TRUE, 'LGA1151', 'ATX', 'DDR4'),
+  (336, TRUE, 'LGA1150', 'mATX', 'DDR3'),
+  (572, FALSE, 'AM4', 'ATX', 'DDR4');
 
 INSERT INTO ComputerSystems (id, name, cpu, mainboard, gpu, ram, computerCase) VALUES
   (688, 'Super Fast Build', 973, 749, NULL, 640, 228),

@@ -1,29 +1,28 @@
-\documentclass[11pt,a4paper]{article}
+\documentclass[a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[danish]{babel}
 \usepackage[T1]{fontenc}
-\usepackage{noto} 
+\usepackage{noto}
 \usepackage{sourcecodepro}
 \usepackage{fullpage}
-\usepackage{color}
+\usepackage[dvipsnames]{xcolor}
 \usepackage{listings}
 \usepackage{setspace}
 \onehalfspacing
 \usepackage{graphicx}
 
-
-
 \lstset{
     language=sql,
-    basicstyle=\scriptsize\ttfamily,
+    basicstyle=\footnotesize\ttfamily,
     breaklines=true,
     showtabs=false,
     showspaces=false,
     breakatwhitespace=true,
     numbers=left,
     captionpos=b,
-    numberstyle=\scriptsize\ttfamily,
-    keywordstyle=\bfseries\color{blue},
+    numberstyle=\footnotesize\ttfamily,
+    keywordstyle=\bfseries\color{PineGreen},
+    identifierstyle=\color{RoyalBlue},
     commentstyle=\color{green},
     stringstyle=\color{red}
 }
@@ -37,49 +36,140 @@
 \tableofcontents
 
 \section{Introduktion}
-Denne rapport dokumenterer det individuelle eksamensprojekt i faget \emph{Database Design og Programmering}.
-Projektet er udarbejdet som en del af 2. semester på uddannelsen \emph{Software Engineering} der udbydes af \emph{Syddansk Universitet}.
-
+Denne rapport dokumenterer det individuelle eksamensprojekt i faget \emph{Database Design og Programmering}, som en del af 2. semester på uddannelsen \emph{Software Engineering} der udbydes af \emph{Syddansk Universitet}.
+Projekts formål er at udvikle et produkt i form af en java applikation med en tilhørende postgresql database.
+Produktet skal være et salg og lager system til et forretning der sælger computer hardware.
+Mere information om kravene til systemet kan findes i projektbeskrivelsen.
 
 \section{Entity Relationship Model}
+Modellen kan ses på figur \ref{fig:er} i bilag \ref{appendix:er}
 
-\begin{lstlisting}[caption=Some Code]
-SELECT ComputerSystems.name, Components.name, Components.price * 1.3 AS price
+\section{Implemtation}
+
+\subsection{Salg af Computer Systemer}
+Før at et computer system kan sælges, checkes først om der er nok komponenter til at bygge som minimum et system. 
+Sql-koden til dette check vist på listing \ref{lst:checkComputerSystem},
+Informationerne bliver hentet fra et left join mellem \texttt{ComputerSystems} og \texttt{Components}. Relationerne joines på \texttt{ComputerSystems} arritibuter der indeholder et component id og er lig med et id i \texttt{Components}.
+
+
+\begin{lstlisting}[caption={Check om der er nok komponenter til at sælge et system},label={lst:checkComputerSystem}]
+SELECT min(currentStock)
 FROM ComputerSystems LEFT JOIN Components ON
 ComputerSystems.cpu = Components.id OR
 ComputerSystems.ram = Components.id OR
 ComputerSystems.mainBoard = Components.id OR
 ComputerSystems.computerCase = Components.id OR
 ComputerSystems.gpu = Components.id
+WHERE ComputerSystems.id = 123
+GROUP BY ComputerSystems.id
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Salg af et computer system]
+UPDATE Components
+SET currentStock = currentStock - 1
+FROM ComputerSystems
+WHERE ComputerSystems.id = 123
 \end{lstlisting}
 
 \section{Brugermanual}
+Programmet startes og accepterer input via terminalen eller output konsollen.
+\begin{itemize}
+    \item Input karekteren \texttt{0} for at vise en liste over alle komponenter og tilhørende lagerantal.
+    \item Input \texttt{1} for at vise alle computer systemer og hvor mange der kan bygges af hver.
+    \item Input \texttt{2} for at vise en pris liste over alle komponenter og computer systemer.
+    \item Input \texttt{3} og derfter et computer system identifikationsnummer samt et antal af systemer, for at få vist et pris tilbud.
+    \item Input \texttt{4} for at sælge et computer system eller en komponent.
+
+        \begin{itemize}
+            \item Input \texttt{0} og et id for at sælge en komponent.
+            \item Input \texttt{1} og et id for at sælge et computer system.
+        \end{itemize}
+
+    \item Input \texttt{5} for at vise en liste over komponenter der skal indkøbes flere af og hvor mange der skal købes.
+\end{itemize}
 
 \section{Tests}
 
 \begin{thebibliography}{9}
 
-\bibitem{Ullman}
-Jeffrey D. Ullman, Hector Garcia-Molina, Jennifer Widom,
-\emph{Database Systems the Complete Book Second Edition},
-Department of Computer Science Stanford University,
-Pearson.
+    \bibitem{Ullman}
+    Jeffrey D. Ullman, Hector Garcia-Molina, Jennifer Widom,
+    \emph{Database Systems the Complete Book Second Edition},
+    Department of Computer Science Stanford University,
+    Pearson.
 
-\bibitem{Liang}
-Y. Daniel Liang,
-\emph{Introduction to Java Programming Comprehensive Verson 10. Edition},
-Armstrong Atlantic State University,
-Pearson.
+    \bibitem{Liang}
+    Y. Daniel Liang,
+    \emph{Introduction to Java Programming Comprehensive Version 10. Edition},
+    Armstrong Atlantic State University,
+    Pearson.
 
 \end{thebibliography}
 
 \appendix
+
 \section{Entity Relationship Model}
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=\textwidth]{ER}
-  \caption{ image}
+\label{appendix:er}
+
+\begin{figure}[htbp!]
+    \centering
+    \includegraphics[width=\textwidth]{ER}
+    \caption{Entity Realtionship Model}
+    \label{fig:er}
 \end{figure}
+
+\section{Realtioner}
+
+\begin{lstlisting}[caption=\texttt{Components} Relation]
+CREATE TABLE Components (
+    id              INTEGER PRIMARY KEY,
+    name            TEXT,
+    price           REAL,
+    minStock        INTEGER,
+    prefStock       INTEGER,
+    currentStock    INTEGER
+);
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Sub-relationer til \texttt{Components}]
+CREATE TABLE CPUs (
+    id              INTEGER PRIMARY KEY REFERENCES Components (id),
+    busSpeed        INTEGER,
+    socket          CPUsockets
+);
+CREATE TABLE RAMs (
+    id              INTEGER PRIMARY KEY REFERENCES Components (id),
+    busSpeed        INTEGER,
+    ramType         RAMTypes
+);
+CREATE TABLE GPUs (
+    id              INTEGER PRIMARY KEY REFERENCES Components (id)
+);
+CREATE TABLE Mainboards (
+    id              INTEGER PRIMARY KEY REFERENCES Components (id),
+    hasOnBoardGPU   BOOLEAN,
+    socket          CPUsockets,
+    formFactor      FormFactors,
+    ramType         RAMTypes,
+    busSpeed        INTEGER
+);
+CREATE TABLE ComputerCases (
+    id              INTEGER PRIMARY KEY REFERENCES Components (id),
+    formFactor      FormFactors
+);
+\end{lstlisting}
+
+\begin{lstlisting}[caption=\texttt{ComputerSystem} Relation]
+CREATE TABLE ComputerSystems (
+    id              INTEGER PRIMARY KEY,
+    name            TEXT,
+    cpu             INTEGER REFERENCES CPUs (id),
+    mainboard       INTEGER REFERENCES Mainboards (id),
+    gpu             INTEGER REFERENCES GPUs (id),
+    ram             INTEGER REFERENCES RAMs (id),
+    computerCase    INTEGER REFERENCES ComputerCases (id)
+);
+\end{lstlisting}
 
 \end{document}
 
