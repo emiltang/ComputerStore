@@ -6,26 +6,13 @@
 \usepackage{sourcecodepro}
 \usepackage{fullpage}
 \usepackage[dvipsnames]{xcolor}
-\usepackage{listings}
 \usepackage{setspace}
 \onehalfspacing
+\usepackage{float}
 \usepackage{graphicx}
-
-\lstset{
-    language=sql,
-    basicstyle=\footnotesize\ttfamily,
-    breaklines=true,
-    showtabs=false,
-    showspaces=false,
-    breakatwhitespace=true,
-    numbers=left,
-    captionpos=b,
-    numberstyle=\footnotesize\ttfamily,
-    keywordstyle=\bfseries\color{PineGreen},
-    identifierstyle=\color{RoyalBlue},
-    commentstyle=\color{green},
-    stringstyle=\color{red}
-}
+\usepackage{minted}
+\setminted[postgresql]{frame=lines,linenos,fontsize=\scriptsize,autogobble}
+\usemintedstyle{colorful}
 
 \title{\textbf{Database Design og Programming Eksamens Projekt}}
 \author{Emil Tang Kristensen}
@@ -34,6 +21,7 @@
 \begin{document}
 \maketitle
 \tableofcontents
+\newpage
 
 \section{Introduktion}
 Denne rapport dokumenterer det individuelle eksamensprojekt i faget \emph{Database Design og Programmering}, som en del af 2. semester på uddannelsen \emph{Software Engineering} der udbydes af \emph{Syddansk Universitet}.
@@ -44,15 +32,69 @@ Mere information om kravene til systemet kan findes i projektbeskrivelsen.
 \section{Entity Relationship Model}
 Modellen kan ses på figur \ref{fig:er} i bilag \ref{appendix:er}
 
-\section{Implemtation}
+\section{Relationer}
+
+\section{Begrænsinger}
+\begin{listing}[H]
+\begin{minted}{postgresql}
+CREATE OR REPLACE FUNCTION checkInsertOnComputerSystem()
+  RETURNS TRIGGER AS $$
+BEGIN
+  IF ((SELECT busSpeed
+       FROM CPUs
+       WHERE id = new.cpu) <> (SELECT busSpeed
+                               FROM RAMs
+                               WHERE id = new.ram))
+  THEN
+    RAISE EXCEPTION 'CPU and RAM bus speed must match';
+  END IF;
+  IF ((SELECT ramType
+       FROM RAMs
+       WHERE id = new.ram) <> (SELECT ramType
+                               FROM Mainboards
+                               WHERE id = new.mainboard))
+  THEN
+    RAISE EXCEPTION 'RAM type must match with motherboard';
+  END IF;
+  IF ((SELECT formFactor
+       FROM ComputerCases
+       WHERE id = new.computerCase) <> (SELECT formFactor
+                                        FROM Mainboards
+                                        WHERE id = new.mainboard))
+  THEN
+    RAISE EXCEPTION 'Case form factor and motherboard form factor must match';
+  END IF;
+  IF ((SELECT socket
+       FROM CPUs
+       WHERE id = new.cpu) <> (SELECT socket
+                               FROM Mainboards
+                               WHERE id = new.mainboard))
+  THEN
+    RAISE EXCEPTION 'CPU socket and motherboard socket must match ';
+  END IF;
+  IF (new.gpu IS NULL AND (SELECT onBoardGPU
+                           FROM Mainboards
+                           WHERE id = new.mainboard) = FALSE)
+  THEN
+    RAISE EXCEPTION 'A Computer System must have a gpu or a motherboard that has on board graphics';
+  END IF;
+  RETURN new;
+END;
+$$ LANGUAGE 'plpgsql';
+\end{minted}
+\caption{a}
+\label{lst:triggerfunc}
+\end{listing}
+
+\section{Java Applikation}
 
 \subsection{Salg af Computer Systemer}
 Før at et computer system kan sælges, checkes først om der er nok komponenter til at bygge som minimum et system. 
-Sql-koden til dette check vist på listing \ref{lst:checkComputerSystem},
+Sql-koden til dette check vist på listing %\ref{lst:checkComputerSystem},
 Informationerne bliver hentet fra et left join mellem \texttt{ComputerSystems} og \texttt{Components}. Relationerne joines på \texttt{ComputerSystems} arritibuter der indeholder et component id og er lig med et id i \texttt{Components}.
 
 
-\begin{lstlisting}[caption={Check om der er nok komponenter til at sælge et system},label={lst:checkComputerSystem}]
+\begin{minted}{postgresql}
 SELECT min(currentStock)
 FROM ComputerSystems LEFT JOIN Components ON
 ComputerSystems.cpu = Components.id OR
@@ -62,14 +104,15 @@ ComputerSystems.computerCase = Components.id OR
 ComputerSystems.gpu = Components.id
 WHERE ComputerSystems.id = 123
 GROUP BY ComputerSystems.id
-\end{lstlisting}
-
-\begin{lstlisting}[caption=Salg af et computer system]
+\end{minted}
+ 
+ 
+\begin{minted}{postgresql}
 UPDATE Components
 SET currentStock = currentStock - 1
 FROM ComputerSystems
 WHERE ComputerSystems.id = 123
-\end{lstlisting}
+\end{minted}
 
 \section{Brugermanual}
 Programmet startes og accepterer input via terminalen eller output konsollen.
@@ -120,7 +163,7 @@ Programmet startes og accepterer input via terminalen eller output konsollen.
 
 \section{Realtioner}
 
-\begin{lstlisting}[caption=\texttt{Components} Relation]
+\begin{minted}{postgresql}
 CREATE TABLE Components (
     id              INTEGER PRIMARY KEY,
     name            TEXT,
@@ -129,9 +172,9 @@ CREATE TABLE Components (
     prefStock       INTEGER,
     currentStock    INTEGER
 );
-\end{lstlisting}
+\end{minted}
 
-\begin{lstlisting}[caption=Sub-relationer til \texttt{Components}]
+\begin{minted}{postgresql}
 CREATE TABLE CPUs (
     id              INTEGER PRIMARY KEY REFERENCES Components (id),
     busSpeed        INTEGER,
@@ -157,9 +200,9 @@ CREATE TABLE ComputerCases (
     id              INTEGER PRIMARY KEY REFERENCES Components (id),
     formFactor      FormFactors
 );
-\end{lstlisting}
+\end{minted}
 
-\begin{lstlisting}[caption=\texttt{ComputerSystem} Relation]
+\begin{minted}{postgresql}
 CREATE TABLE ComputerSystems (
     id              INTEGER PRIMARY KEY,
     name            TEXT,
@@ -169,7 +212,6 @@ CREATE TABLE ComputerSystems (
     ram             INTEGER REFERENCES RAMs (id),
     computerCase    INTEGER REFERENCES ComputerCases (id)
 );
-\end{lstlisting}
+\end{minted}
 
 \end{document}
-

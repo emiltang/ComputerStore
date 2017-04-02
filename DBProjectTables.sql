@@ -22,7 +22,7 @@ CREATE TYPE FormFactors AS ENUM (
 /* Super table that stores generic components */
 CREATE TABLE Components (
   id           INTEGER PRIMARY KEY,
-  name         TEXT,
+  componentName         TEXT,
   price        REAL,
   minStock     INTEGER,
   prefStock    INTEGER,
@@ -48,7 +48,7 @@ CREATE TABLE GPUs (
 
 CREATE TABLE Mainboards (
   id            INTEGER PRIMARY KEY REFERENCES Components (id),
-  hasOnBoardGPU BOOLEAN,
+  onBoardGPU BOOLEAN,
   socket        CPUsockets,
   formFactor    FormFactors,
   ramType       RAMTypes
@@ -62,7 +62,7 @@ CREATE TABLE ComputerCases (
 /* TODO add check */
 CREATE TABLE ComputerSystems (
   id           INTEGER PRIMARY KEY,
-  name         TEXT,
+  computerSystemName         TEXT,
   cpu          INTEGER REFERENCES CPUs (id)          NOT NULL,
   mainboard    INTEGER REFERENCES Mainboards (id)    NOT NULL,
   gpu          INTEGER REFERENCES GPUs (id),
@@ -105,7 +105,7 @@ BEGIN
   THEN
     RAISE EXCEPTION 'CPU socket and motherboard socket must match ';
   END IF;
-  IF (new.gpu IS NULL AND (SELECT hasOnBoardGPU
+  IF (new.gpu IS NULL AND (SELECT onBoardGPU
                            FROM Mainboards
                            WHERE id = new.mainboard) = FALSE)
   THEN
