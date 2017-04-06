@@ -135,10 +135,13 @@ public class ComputerStore {
                 preparedStatement2.executeUpdate();
             } else {
                 System.out.println("Component out of stock");
+                return;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        System.out.print("component system sold succesfully");
+
     }
 
     private void sellComputerSystem(String name) {
@@ -165,11 +168,12 @@ public class ComputerStore {
                 preparedStatement2.executeUpdate();
             } else {
                 System.out.println("Component out of stock");
+                return;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
+        System.out.print("Computer system sold succesfully");
     }
 
     private void printRestockList() {
@@ -294,7 +298,7 @@ public class ComputerStore {
                             "GROUP BY computerSystemName"
             );
             while (resultSet.next()) {
-                System.out.format("%-48s%16d\n", resultSet.getString(1), resultSet.getInt(2));
+                System.out.format("%-78s%3d\n", resultSet.getString(1), resultSet.getInt(2));
             }
         } catch (SQLException e) {
             e.printStackTrace();

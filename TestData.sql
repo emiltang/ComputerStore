@@ -34,10 +34,10 @@ INSERT INTO Components (id, componentName, price, minStock, prefStock, currentSt
   (572, 'ASUS ROG Crosshair VI Hero, Socket-AM4', 2290, 4, 10, 6),
   (822, 'Gigabyte Aorus GA-AX370-Gaming 5, S-AM4', 1849, 4, 10, 1),
   (121, 'MSI 970A GAMING PRO CARBON, Socket AM3+', 969, 4, 10, 25),
-  (806, 'MSI H110I Pro, Socket-1151', 579, 4, 30, 10),
+  (805, 'MSI H110I Pro, Socket-1151', 579, 4, 30, 10),
   (016, 'ASUS Sabertooth 990FX R3.0, Socket-AM3+', 1590, 4, 30, 0),
   (807, 'MSI Z270 Tomahawk Arctic, Socket-1151', 1399, 4, 30, 17),
-  (807, 'MSI A88XM-E35 V2, Socket FM2+', 495, 4, 30, 2),
+  (806, 'MSI A88XM-E35 V2, Socket FM2+', 495, 4, 30, 2),
 
   -- Cases
   (228, 'Corsair Carbide Clear 400C Midi Tower', 769, 7, 30, 22),
@@ -64,8 +64,8 @@ INSERT INTO CPUs (id, busSpeed, socket) VALUES
   (524, 1600, 'LGA1150'),
   (433, 3200, 'AM4'),
   (612, 1333, 'AM3'),
-  (901, 2133, 'LGA1511'),
-  (053, 2400, 'LGA1511'),
+  (901, 2133, 'LGA1151'),
+  (053, 2400, 'LGA1151'),
   (767, 3200, 'AM4'),
   (483, 1600, 'FM2');
 
@@ -89,17 +89,17 @@ INSERT INTO Mainboards (id, onBoardGPU, socket, formFactor, ramType) VALUES
   (572, FALSE, 'AM4', 'ATX', 'DDR4'),
   (822, FALSE, 'AM4', 'ATX', 'DDR4'),
   (121, FALSE, 'AM3', 'ATX', 'DDR3'),
-  (806, TRUE, 'LGA1511', 'mITX', 'DDR4'),
+  (805, TRUE, 'LGA1151', 'mITX', 'DDR4'),
   (016, FALSE, 'AM3', 'ATX', 'DDR3'),
-  (807, TRUE, 'LGA1511', 'ATX', 'DDR4'),
-  (807, TRUE, 'FM2', 'mATX', 'DDR3');
+  (807, TRUE, 'LGA1151', 'ATX', 'DDR4'),
+  (806, TRUE, 'FM2', 'mATX', 'DDR3');
 
 INSERT INTO ComputerSystems (computerSystemName, cpu, mainboard, gpu, ram, computerCase) VALUES
   ('Super Fast Build', 973, 749, NULL, 640, 228),
   ('Coolmaster masterComputer', 524, 336, NULL, 838, 402),
   ('AMD Ryzen Rig', 433, 572, 720, 368, 436),
   ('RGB everything', 767, 822, 497, 254, 059),
-  ('EXTREME RGB SUPER HATRED SPITFIRE REVENGE GAMING MESSERSCHMIDT EDITION', 053, 806, 720, 182, 095),
-  ('Sponsored by Mountain Dew, Doritos and Snoop Dogg', 483, 807, FALSE, 838, 402),
+  ('EXTREME RGB SUPER HATRED SPITFIRE REVENGE GAMING MESSERSCHMIDT EDITION', 053, 805, 720, 182, 095),
+  ('Sponsored by Mountain Dew, Doritos and Snoop Dogg', 483, 806, NULL, 838, 402),
   ('No guarantee it wont burn your apartment down', 901, 807, 497, 900, 631),
-  ('♪Deja Vu i''ve just been in this place before♪', 053, 806, 720, 182, 095);
+  ('♪Deja Vu i''ve just been in this place before♪', 053, 805, 720, 182, 095);

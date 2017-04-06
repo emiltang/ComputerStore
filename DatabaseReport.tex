@@ -63,12 +63,12 @@ The subclass \emph{RAM} has a type and bus speed.
 
 Another entity set is \emph{ComputerSystem}, it represents a collection of components to build complete computer. The entity set has a CPU, a GPU, RAM, a motherboard and a case. Finally is has a name which is also key. The connection from \emph{ComputerSystem} to \emph{Components}, represents the referential constraint that a computer systems components must be in the component relation.
 
-\begin{figure}[!htbp]
-    \centering
-    \includesvg[pretex=\footnotesize\ttfamily, png, width=\textwidth]{ER}
-    \caption{Entity Relationship Model}
-    \label{fig:er}
-\end{figure}
+%\begin{figure}[!htbp]
+%    \centering
+%    \includesvg[pretex=\footnotesize\ttfamily, png, width=\textwidth]{ER}
+%    \caption{Entity Relationship Model}
+%    \label{fig:er}
+%\end{figure}
 
 \section{Relations}
 The database schemas in system is constructed from the ER model, such that each entity set becomes a relation.
@@ -90,8 +90,8 @@ The reasoning for this choice is that it prevents spelling mistakes and ensures 
 The enumerated types used in this system can be seen on listing \ref{enum} in the appendix.
 
 \subsection{Third Normal Form}
-
-%TODO Fill text
+The \texttt{Components} has the functional dependency id that is the a superkey, there are no other keys in this relation. That means we can determine that this relation is both in third normal for and Boyce-Codd normal form.
+The same reasoning holds for the other relations in the system. 
 
 \section{Constraints}
 A requirement of this project is that a computer system must have a CPU, a mainboard, a case and a RAM component. 
