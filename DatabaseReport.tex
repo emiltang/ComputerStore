@@ -1,35 +1,35 @@
 \documentclass[12pt,a4paper]{article}
 
-% fonts and encoding
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage[T1]{fontenc}
-\usepackage{libertine}
-\usepackage{inconsolata}
+\usepackage{merriweather}
+\usepackage{sourcecodepro}
 
-% page layout
 \usepackage{fullpage}
 \usepackage{setspace}
 \onehalfspacing
+\usepackage{svg}
 
-% fugure and source code listings
 \usepackage{graphicx}
 \usepackage{minted}
 
 \setminted[postgresql]{
 	linenos,
 	fontsize=\scriptsize,
-	autogobble
+	autogobble,
+	breaklines
 }
 \setminted[psql]{
     linenos,
     fontsize=\scriptsize,
-    autogobble
+    autogobble,
+    breaklines
 }
 \usemintedstyle{pastie}
 
-% title and author 
-\title{\textbf{Database Design and Programming Exam Project}}
+
+\title{\textbf{Database Design and Programming \\Exam Project}}
 \author{Emil Tang Kristensen}
 \date{\today}
 
@@ -37,33 +37,70 @@
 \maketitle
 \tableofcontents
 
+\newpage
+
 \section{Introduction}
 This report documents the individual exam project in the course \emph{Database Design and Programming}. 
-The course took place on the University of Southern Denmark in the springs semester 2017.
+The course took place on the University of Southern Denmark in the spring semester 2017.
 The subject of this project is to design and develop a database in the database management system Postgresql and a Java interface to interact with the database.  
 The product should be a system to manage stock and sales in a computer component shop.
 
 \section{Entity Relationship Model}
+The core of ER model is the \emph{Component} entity set, it represents the computer parts that was specified in project description, the entity has the following attributes,
+\emph{componentName}, the name of the component,
+\emph{price}, the components price without counting the extra 30\% selling margin,
+\emph{currentStock}, how many of the component is in the stock,
+\emph{minStock}, the minimum stock amount, if the stock is under this limit when the shop wants refill thier stock, the component will be included,
+\emph{prefStock}, the preferred stock amount, when refilling the stock, components are bought such that the stock reach this level,
+\emph{id}, an identification number to uniquely identify a component, it is also a key.
 
+The \emph{Components} entity set has a number of subclasses, connected by the \emph{isa} relationship. 
+There is a \emph{CPU} subclass with the attributes, bus speed and socket.
+The subclass \emph{RAM} has a type and bus speed.
+\emph{GPU} has no attributes.
+\emph{Case} has a for factor.
+\emph{Motherboard} has a form factor, a socket, a ram type and an attribute called \emph{onBoardGpu} that descries whether a component supports on board graphics.
+
+Another entity set is \emph{ComputerSystem}, it represents a collection of components to build complete computer. The entity set has a CPU, a GPU, RAM, a motherboard and a case. Finally is has a name which is also key. The connection from \emph{ComputerSystem} to \emph{Components}, represents the referential constraint that a computer systems components must be in the component relation.
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=\textwidth]{ER}
+    \includesvg[pretex=\footnotesize\ttfamily, png, width=\textwidth]{ER}
     \caption{Entity Relationship Model}
     \label{fig:er}
 \end{figure}
 
 \section{Relations}
+The database schemas in system is constructed from the ER model, such that each entity set becomes a relation.
+The \texttt{Components} relation has an id as the \texttt{PRIMARY KEY}. 
+It also has a name which is a \texttt{TEXT} type, this type is chosen because the length can vary and there is no performance gains compared to \texttt{CHAR}, it only uses more space\footnote{https://www.postgresql.org/docs/current/static/datatype-character.html, \today.}.
+The price is a \texttt{NUMERIC} type, this type is chosen since it is exact. When dealing with money it is important to not lose data.
+The stock attributes and id are \texttt{INTEGER} types.
+
+The sub class relations of \texttt{Component} all have the same key as the super class, their attributes are mostly an enumerated type that is described in section \ref{sec:enum}. 
+There are however a few exceptions, the bus speed attribute is an \texttt{INTEGER} and the onboard graphics attribute is a \texttt{BOOLEAN}. The \texttt{Component} relation and the sub classes can be found in the appendix on listing \ref{lst:CaseRelation}.
+
+The \texttt{ComputerSystem} relation has the name as a \texttt{TEXT} type and \texttt{PRIMARY KEY}. The components attributes are the keys from the \texttt{Components} relation. The schema can be found in the appendix on listing \ref{lst:computersystem}. 
+
+\subsection{Enumerated Types}
+\label{sec:enum}
+The arritibutes on \texttt{Components}, RAM type, CPU socket and for factor could have been represented in the system as normal character arrays or the \texttt{text} types. 
+In this system the types are chosen to be enumerated types.
+The reasoning for this choice is that it prevents spelling mistakes and ensures that only actual sockets are entered, this is important since there attributes needs to be accurately compared to one another.
+The enumerated types used in this system can be seen on listing \ref{enum} in the appendix.
+
+\subsection{Third Normal Form}
+
+%TODO Fill text
 
 \section{Constraints}
-
 A requirement of this project is that a computer system must have a CPU, a mainboard, a case and a RAM component. 
 This constraint is implemented with a foreign key to ensures that the id a valid component of the right type.
 Furthermore a not \texttt{NOT NULL} constraint is used, since a computer system must have these attributes. 
 These constraints are used in the \texttt{ComputerSystems} relationship schema, that can be seen in listing \ref{lst:computersystem} on page \pageref{lst:computersystem}.
 
 Another constraint that needs to be implemented in the system, is that the components in a computer system needs to fit together, for example a CPU and motherboard should have the same socket.
-This constraint is implemented with a trigger that fires on insert in \texttt{ComputerSystems}. The trigger calls the function \texttt{checkInsertOnComputerSystem()} that queries the cpu socket and motherboard socket of an new tuple. If the socket is not equal an exception is raised, with an error message. The function also chacks for form facor, ram type and bus speed, it can be seen on listing \ref{lst:trigger}.
+This constraint is implemented with a trigger that fires on insert in \texttt{ComputerSystems}. The trigger calls the function \texttt{checkInsertOnComputerSystem()} that queries the CPU socket and motherboard socket of an new tuple. If the socket is not equal an exception is raised, with an error message. The function also checks for form factor, ram type and bus speed, it can be seen on listing \ref{lst:trigger}.
 
 The last constraint is that a computer system can optionally have a graphics card, however if there is no graphics card the motherboard must support onboard graphics. 
 This check is run in the same function as the other checks, if the  graphics card is null and the query of the motherboards onboard graphics support is \texttt{FALSE}, an exception is raised. 
@@ -121,7 +158,6 @@ This check is run in the same function as the other checks, if the  graphics car
 	\end{minted}
 	\caption{\texttt{checkInsertOnComputerSystemTrigger}}
 	\label{lst:trigger}
-
 \end{listing}
 
 \section{Java Interface}
@@ -141,7 +177,7 @@ The current stock in \texttt{Comonents} is reduced by one, where the id is in th
     FROM ComputerSystems JOIN Components 
     ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id
     WHERE computerSystemName = ?
-    GROUP BY computerSystemName
+    GROUP BY computerSystemName;
     \end{minted}
     \caption{Check if there is enough components to complete a sale}
     \label{lst:salequery}
@@ -153,26 +189,43 @@ The current stock in \texttt{Comonents} is reduced by one, where the id is in th
     SET currentStock = currentStock - 1
     WHERE id IN (SELECT id FROM ComputerSystems JOIN Components
     ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id
-    WHERE computerSystemName = ?)
+    WHERE computerSystemName = ?);
 	\end{minted}
 	\caption{Update stock after sale of a computer system}
 \label{lst:saleupdate}
 \end{listing}
 
 \subsection{Restocking}
-Genopfyldningslisten hentes fra databasen med en query der kan ses på listing \ref{lst:restock}
-. Listen henter navn og forskellen mellem den ønskede lagebeholdning og den nuværende lagerbeholdning fra \texttt{Components} relationen, hvor den nuværende lagerbeholdning er mindre en minimums lagebeholdningen,
+
+The restocking list is fetched from the query on listing  \ref{lst:restock}, name and the difference between preferred stock and current stock is selected, from \texttt{Components}, where the current stock is smaller than the minimium stock.
 
 \begin{listing}[!htbp]
 	\begin{minted}{postgresql}
-	SELECT name, prefStock - currentStock AS restockAmount
-	FROM Components
-	WHERE currentStock < minStock
+    SELECT componentName, prefStock - currentStock AS restockAmount
+    FROM Components
+    WHERE currentStock < minStock;
 	\end{minted}
 	\caption{Restock query}
-\label{lst:restock}
+    \label{lst:restock}
 \end{listing}
 
+\subsection{Price Offer}
+The price offer query on listing \ref{lst:offer} is similar to the query used to check before a sale of a computer system. This query uses the \texttt{SUM()} function instead. 
+The price also multiplied to get the selling price in the query.
+
+The rest of the functionality is implemented in Java. The price is rounded to nearest 99 and discount is applied.
+
+\begin{listing}[!htbp]
+    \begin{minted}{postgresql}
+    SELECT computerSystemName, SUM(price) * 1.3 AS price
+    FROM ComputerSystems JOIN Components
+    ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id
+    WHERE computerSystemName = ?
+    GROUP BY computerSystemName;
+    \end{minted}
+    \caption{Price Offer Query}
+    \label{lst:offer}
+    \end{listing}
 \section{Manual}
 Use the program by entering one of the following commands into the terminal.
 
@@ -180,7 +233,7 @@ Use the program by entering one of the following commands into the terminal.
 \begin{center}
 \begin{tabular}{ll}
     0 & List of components and stock. \\ 
-    1 & List of comouter system and how many can be built. \\ 
+    1 & List of computer system and how many can be built. \\ 
     2 & Price list of components and computer systems. \\ 
     3 & Get a price offer on computer system \\
     4 & Sell a component and a computer system \\
@@ -190,9 +243,9 @@ Use the program by entering one of the following commands into the terminal.
 
 \section{Test}
 \subsection{Test of Trigger}
-To test the trigger, some data is inserted into \texttt{ComputerSystem}, the data i chosen such that they should give all the possible exceptions int the trigger function. The test can be seen on listing \ref{input}.
+To test the trigger, some data is inserted into \texttt{ComputerSystem}, the data iw chosen such that they should give all the possible exceptions in the trigger function. The test can be seen on listing \ref{input}.
 
-The output on lising \ref{output} is as expected, all the insertions failed and generated all the possible exceptions.
+The output on listing \ref{output} is as expected, all the insertions failed and generated all the possible exceptions.
 
 \begin{listing}[!htbp]
 \begin{minted}{postgresql}
@@ -241,21 +294,67 @@ CONTEXT:  PL/pgSQL function checkinsertoncomputersystem() line 39 at RAISE
     \emph{Introduction to Java Programming Comprehensive Version 10. Edition},
     Armstrong Atlantic State University,
     Pearson.
+    
+    \bibitem{Doc}
+    The PostgreSQL Global Development Group, 
+    \emph{PostgreSQL 9.6.2 Documentation}, 
+    https://www.postgresql.org/docs/9.6/static/index.html, 
+    \today.
 
 \end{thebibliography}
 \listoffigures
 \listoflistings
 
+
 \appendix
 
-\section{Relations}
+\section{Appendix}
+
+\begin{listing}
+\begin{minted}{postgresql}
+CREATE TYPE CPUSockets AS ENUM (
+  'LGA1150',
+  'LGA1151',
+  'AM3',
+  'AM4'
+);
+
+CREATE TYPE RAMTypes AS ENUM (
+  'DDR3',
+  'DDR4'
+);
+
+CREATE TYPE FormFactors AS ENUM (
+  'mATX',
+  'mITX',
+  'ATX'
+);
+\end{minted}
+\caption{Enumerated types}
+\label{enum}
+\end{listing}
+
+\begin{listing}[!htbp]
+    \begin{minted}{postgresql}
+    CREATE TABLE ComputerSystems (
+        computerSystemName TEXT PRIMARY KEY,
+        cpu                INTEGER REFERENCES CPUs (id)          NOT NULL,
+        mainboard          INTEGER REFERENCES Mainboards (id)    NOT NULL,
+        gpu                INTEGER REFERENCES GPUs (id),
+        ram                INTEGER REFERENCES RAMs (id)          NOT NULL,
+        computerCase       INTEGER REFERENCES ComputerCases (id) NOT NULL
+    );
+    \end{minted}
+    \caption{\texttt{ComputerSystems} relation schema}
+    \label{lst:computersystem}
+\end{listing}
 
 \begin{listing}[!htbp]
     \begin{minted}{postgresql}
     CREATE TABLE Components (
         id            INTEGER PRIMARY KEY,
         componentName TEXT,
-        price         REAL,
+        price         NUMERIC,
         minStock      INTEGER,
         prefStock     INTEGER,
         currentStock  INTEGER
@@ -293,22 +392,6 @@ CONTEXT:  PL/pgSQL function checkinsertoncomputersystem() line 39 at RAISE
     \end{minted}
     \caption{\texttt{ComputerCases} relation schema}
     \label{lst:CaseRelation}
-\end{listing}
-
-\begin{listing}[!htbp]
-    \begin{minted}{postgresql}
-    CREATE TABLE ComputerSystems (
-        id                 INTEGER PRIMARY KEY,
-        computerSystemName TEXT,
-        cpu                INTEGER REFERENCES CPUs (id)          NOT NULL,
-        mainboard          INTEGER REFERENCES Mainboards (id)    NOT NULL,
-        gpu                INTEGER REFERENCES GPUs (id),
-        ram                INTEGER REFERENCES RAMs (id)          NOT NULL,
-        computerCase       INTEGER REFERENCES ComputerCases (id) NOT NULL
-    );
-    \end{minted}
-    \caption{\texttt{ComputerSystems} relation schema}
-    \label{lst:computersystem}
 \end{listing}
 
 \end{document}

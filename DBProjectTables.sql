@@ -1,19 +1,20 @@
 -- noinspection SqlNoDataSourceInspectionForFile
 
 /* Enumerated types */
-CREATE TYPE CPUSockets AS ENUM (
+CREATE TYPE CPUSOCKETS AS ENUM (
   'LGA1150',
   'LGA1151',
   'AM3',
-  'AM4'
+  'AM4',
+  'FM2'
 );
 
-CREATE TYPE RAMTypes AS ENUM (
+CREATE TYPE RAMTYPES AS ENUM (
   'DDR3',
   'DDR4'
 );
 
-CREATE TYPE FormFactors AS ENUM (
+CREATE TYPE FORMFACTORS AS ENUM (
   'mATX',
   'mITX',
   'ATX'
@@ -23,7 +24,7 @@ CREATE TYPE FormFactors AS ENUM (
 CREATE TABLE Components (
   id            INTEGER PRIMARY KEY,
   componentName TEXT,
-  price         REAL,
+  price         NUMERIC,
   minStock      INTEGER,
   prefStock     INTEGER,
   currentStock  INTEGER
@@ -33,13 +34,13 @@ CREATE TABLE Components (
 CREATE TABLE CPUs (
   id       INTEGER PRIMARY KEY REFERENCES Components (id),
   busSpeed INTEGER,
-  socket   CPUsockets
+  socket   CPUSOCKETS
 );
 
 CREATE TABLE RAMs (
   id       INTEGER PRIMARY KEY REFERENCES Components (id),
   busSpeed INTEGER,
-  ramType  RAMTypes
+  ramType  RAMTYPES
 );
 
 CREATE TABLE GPUs (
@@ -49,14 +50,14 @@ CREATE TABLE GPUs (
 CREATE TABLE Mainboards (
   id         INTEGER PRIMARY KEY REFERENCES Components (id),
   onBoardGPU BOOLEAN,
-  socket     CPUsockets,
-  formFactor FormFactors,
-  ramType    RAMTypes
+  socket     CPUSOCKETS,
+  formFactor FORMFACTORS,
+  ramType    RAMTYPES
 );
 
 CREATE TABLE ComputerCases (
   id         INTEGER PRIMARY KEY REFERENCES Components (id),
-  formFactor FormFactors
+  formFactor FORMFACTORS
 );
 
 CREATE TABLE ComputerSystems (

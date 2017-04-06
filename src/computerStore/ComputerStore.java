@@ -175,7 +175,7 @@ public class ComputerStore {
     private void printRestockList() {
         try {
             ResultSet resultSet = statement.executeQuery(
-                    "SELECT name, prefStock - currentStock AS restockAmount " +
+                    "SELECT componentName, prefStock - currentStock AS restockAmount " +
                             "FROM Components " +
                             "WHERE currentStock < minStock"
             );
