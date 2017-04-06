@@ -21,12 +21,12 @@ CREATE TYPE FormFactors AS ENUM (
 
 /* Super table that stores generic components */
 CREATE TABLE Components (
-  id           INTEGER PRIMARY KEY,
-  componentName         TEXT,
-  price        REAL,
-  minStock     INTEGER,
-  prefStock    INTEGER,
-  currentStock INTEGER
+  id            INTEGER PRIMARY KEY,
+  componentName TEXT,
+  price         REAL,
+  minStock      INTEGER,
+  prefStock     INTEGER,
+  currentStock  INTEGER
 );
 
 /* The following tables inherits from Component */
@@ -47,11 +47,11 @@ CREATE TABLE GPUs (
 );
 
 CREATE TABLE Mainboards (
-  id            INTEGER PRIMARY KEY REFERENCES Components (id),
+  id         INTEGER PRIMARY KEY REFERENCES Components (id),
   onBoardGPU BOOLEAN,
-  socket        CPUsockets,
-  formFactor    FormFactors,
-  ramType       RAMTypes
+  socket     CPUsockets,
+  formFactor FormFactors,
+  ramType    RAMTypes
 );
 
 CREATE TABLE ComputerCases (
@@ -59,15 +59,13 @@ CREATE TABLE ComputerCases (
   formFactor FormFactors
 );
 
-/* TODO add check */
 CREATE TABLE ComputerSystems (
-  id           INTEGER PRIMARY KEY,
-  computerSystemName         TEXT,
-  cpu          INTEGER REFERENCES CPUs (id)          NOT NULL,
-  mainboard    INTEGER REFERENCES Mainboards (id)    NOT NULL,
-  gpu          INTEGER REFERENCES GPUs (id),
-  ram          INTEGER REFERENCES RAMs (id)          NOT NULL,
-  computerCase INTEGER REFERENCES ComputerCases (id) NOT NULL
+  computerSystemName TEXT PRIMARY KEY,
+  cpu                INTEGER REFERENCES CPUs (id)          NOT NULL,
+  mainboard          INTEGER REFERENCES Mainboards (id)    NOT NULL,
+  gpu                INTEGER REFERENCES GPUs (id),
+  ram                INTEGER REFERENCES RAMs (id)          NOT NULL,
+  computerCase       INTEGER REFERENCES ComputerCases (id) NOT NULL
 );
 
 CREATE OR REPLACE FUNCTION checkInsertOnComputerSystem()

@@ -1,137 +1,232 @@
-\documentclass[a4paper]{article}
+\documentclass[12pt,a4paper]{article}
+
+% fonts and encoding
 \usepackage[utf8]{inputenc}
-\usepackage[danish]{babel}
+\usepackage[english]{babel}
 \usepackage[T1]{fontenc}
-\usepackage{noto}
-\usepackage{sourcecodepro}
+\usepackage{libertine}
+\usepackage{inconsolata}
+
+% page layout
 \usepackage{fullpage}
-\usepackage[dvipsnames]{xcolor}
 \usepackage{setspace}
 \onehalfspacing
-\usepackage{float}
+
+% fugure and source code listings
 \usepackage{graphicx}
 \usepackage{minted}
-\setminted[postgresql]{frame=lines,linenos,fontsize=\scriptsize,autogobble}
-\usemintedstyle{colorful}
 
-\title{\textbf{Database Design og Programming Eksamens Projekt}}
+\setminted[postgresql]{
+	linenos,
+	fontsize=\scriptsize,
+	autogobble
+}
+\setminted[psql]{
+    linenos,
+    fontsize=\scriptsize,
+    autogobble
+}
+\usemintedstyle{pastie}
+
+% title and author 
+\title{\textbf{Database Design and Programming Exam Project}}
 \author{Emil Tang Kristensen}
-\date{23. marts 2017}
+\date{\today}
 
 \begin{document}
 \maketitle
 \tableofcontents
-\newpage
 
-\section{Introduktion}
-Denne rapport dokumenterer det individuelle eksamensprojekt i faget \emph{Database Design og Programmering}, som en del af 2. semester på uddannelsen \emph{Software Engineering} der udbydes af \emph{Syddansk Universitet}.
-Projekts formål er at udvikle et produkt i form af en java applikation med en tilhørende postgresql database.
-Produktet skal være et salg og lager system til et forretning der sælger computer hardware.
-Mere information om kravene til systemet kan findes i projektbeskrivelsen.
+\section{Introduction}
+This report documents the individual exam project in the course \emph{Database Design and Programming}. 
+The course took place on the University of Southern Denmark in the springs semester 2017.
+The subject of this project is to design and develop a database in the database management system Postgresql and a Java interface to interact with the database.  
+The product should be a system to manage stock and sales in a computer component shop.
 
 \section{Entity Relationship Model}
-Modellen kan ses på figur \ref{fig:er} i bilag \ref{appendix:er}
 
-\section{Relationer}
 
-\section{Begrænsinger}
-\begin{listing}[H]
-\begin{minted}{postgresql}
-CREATE OR REPLACE FUNCTION checkInsertOnComputerSystem()
-  RETURNS TRIGGER AS $$
-BEGIN
-  IF ((SELECT busSpeed
-       FROM CPUs
-       WHERE id = new.cpu) <> (SELECT busSpeed
-                               FROM RAMs
-                               WHERE id = new.ram))
-  THEN
-    RAISE EXCEPTION 'CPU and RAM bus speed must match';
-  END IF;
-  IF ((SELECT ramType
-       FROM RAMs
-       WHERE id = new.ram) <> (SELECT ramType
-                               FROM Mainboards
-                               WHERE id = new.mainboard))
-  THEN
-    RAISE EXCEPTION 'RAM type must match with motherboard';
-  END IF;
-  IF ((SELECT formFactor
-       FROM ComputerCases
-       WHERE id = new.computerCase) <> (SELECT formFactor
-                                        FROM Mainboards
-                                        WHERE id = new.mainboard))
-  THEN
-    RAISE EXCEPTION 'Case form factor and motherboard form factor must match';
-  END IF;
-  IF ((SELECT socket
-       FROM CPUs
-       WHERE id = new.cpu) <> (SELECT socket
-                               FROM Mainboards
-                               WHERE id = new.mainboard))
-  THEN
-    RAISE EXCEPTION 'CPU socket and motherboard socket must match ';
-  END IF;
-  IF (new.gpu IS NULL AND (SELECT onBoardGPU
-                           FROM Mainboards
-                           WHERE id = new.mainboard) = FALSE)
-  THEN
-    RAISE EXCEPTION 'A Computer System must have a gpu or a motherboard that has on board graphics';
-  END IF;
-  RETURN new;
-END;
-$$ LANGUAGE 'plpgsql';
-\end{minted}
-\caption{a}
-\label{lst:triggerfunc}
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=\textwidth]{ER}
+    \caption{Entity Relationship Model}
+    \label{fig:er}
+\end{figure}
+
+\section{Relations}
+
+\section{Constraints}
+
+A requirement of this project is that a computer system must have a CPU, a mainboard, a case and a RAM component. 
+This constraint is implemented with a foreign key to ensures that the id a valid component of the right type.
+Furthermore a not \texttt{NOT NULL} constraint is used, since a computer system must have these attributes. 
+These constraints are used in the \texttt{ComputerSystems} relationship schema, that can be seen in listing \ref{lst:computersystem} on page \pageref{lst:computersystem}.
+
+Another constraint that needs to be implemented in the system, is that the components in a computer system needs to fit together, for example a CPU and motherboard should have the same socket.
+This constraint is implemented with a trigger that fires on insert in \texttt{ComputerSystems}. The trigger calls the function \texttt{checkInsertOnComputerSystem()} that queries the cpu socket and motherboard socket of an new tuple. If the socket is not equal an exception is raised, with an error message. The function also chacks for form facor, ram type and bus speed, it can be seen on listing \ref{lst:trigger}.
+
+The last constraint is that a computer system can optionally have a graphics card, however if there is no graphics card the motherboard must support onboard graphics. 
+This check is run in the same function as the other checks, if the  graphics card is null and the query of the motherboards onboard graphics support is \texttt{FALSE}, an exception is raised. 
+
+\begin{listing}[!htbp]
+	\begin{minted}{postgresql}
+	CREATE OR REPLACE FUNCTION checkInsertOnComputerSystem()
+	  RETURNS TRIGGER AS $$
+	BEGIN
+	  IF ((SELECT busSpeed
+	       FROM CPUs
+	       WHERE id = new.cpu) <> (SELECT busSpeed
+	                               FROM RAMs
+	                               WHERE id = new.ram))
+	  THEN
+	    RAISE EXCEPTION 'CPU and RAM bus speed must match';
+	  END IF;
+	  IF ((SELECT ramType
+	       FROM RAMs
+	       WHERE id = new.ram) <> (SELECT ramType
+	                               FROM Mainboards
+	                               WHERE id = new.mainboard))
+	  THEN
+	    RAISE EXCEPTION 'RAM type must match with motherboard';
+	  END IF;
+	  IF ((SELECT formFactor
+	       FROM ComputerCases
+	       WHERE id = new.computerCase) <> (SELECT formFactor
+	                                        FROM Mainboards
+	                                        WHERE id = new.mainboard))
+	  THEN
+	    RAISE EXCEPTION 'Case form factor and motherboard form factor must match';
+	  END IF;
+	  IF ((SELECT socket
+	       FROM CPUs
+	       WHERE id = new.cpu) <> (SELECT socket
+	                               FROM Mainboards
+	                               WHERE id = new.mainboard))
+	  THEN
+	    RAISE EXCEPTION 'CPU socket and motherboard socket must match ';
+	  END IF;
+	  IF (new.gpu IS NULL AND (SELECT onBoardGPU
+	                           FROM Mainboards
+	                           WHERE id = new.mainboard) = FALSE)
+	  THEN
+	    RAISE EXCEPTION 'A Computer System must have a gpu or a motherboard that has on board graphics';
+	  END IF;
+	  RETURN new;
+	END;
+	$$ LANGUAGE 'plpgsql';
+
+	CREATE TRIGGER checkInsertOnComputerSystemTrigger
+	BEFORE INSERT ON ComputerSystems
+	FOR EACH ROW EXECUTE PROCEDURE checkInsertOnComputerSystem();
+	\end{minted}
+	\caption{\texttt{checkInsertOnComputerSystemTrigger}}
+	\label{lst:trigger}
+
 \end{listing}
 
-\section{Java Applikation}
+\section{Java Interface}
 
-\subsection{Salg af Computer Systemer}
-Før at et computer system kan sælges, checkes først om der er nok komponenter til at bygge som minimum et system. 
-Sql-koden til dette check vist på listing %\ref{lst:checkComputerSystem},
-Informationerne bliver hentet fra et left join mellem \texttt{ComputerSystems} og \texttt{Components}. Relationerne joines på \texttt{ComputerSystems} arritibuter der indeholder et component id og er lig med et id i \texttt{Components}.
+\subsection{Sale of Computer Systems}
+Before a sale of a computer system can be completed, first the system checks if it is possible to build at least one computer system. 
+The query selects from a join between \texttt{ComputerSystems} and \texttt{Components}, the two tables are joined on all \texttt{ComputerSystems} component attributes and id from \texttt{Components}. 
+Then the lowest stock amount of components for the chosen computer system is selected. 
+The query can be found in listing \ref{lst:salequery}.
 
+If the stock amount is more than one, the sale can be completed. 
+The current stock in \texttt{Comonents} is reduced by one, where the id is in the result of a sub query that gets all the component ids for the computer system.
 
+\begin{listing}[!htbp]
+    \begin{minted}{postgresql}
+    SELECT min(currentStock)
+    FROM ComputerSystems JOIN Components 
+    ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id
+    WHERE computerSystemName = ?
+    GROUP BY computerSystemName
+    \end{minted}
+    \caption{Check if there is enough components to complete a sale}
+    \label{lst:salequery}
+\end{listing}
+
+\begin{listing}[!htbp]
+	\begin{minted}{postgresql}
+    UPDATE Components
+    SET currentStock = currentStock - 1
+    WHERE id IN (SELECT id FROM ComputerSystems JOIN Components
+    ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id
+    WHERE computerSystemName = ?)
+	\end{minted}
+	\caption{Update stock after sale of a computer system}
+\label{lst:saleupdate}
+\end{listing}
+
+\subsection{Restocking}
+Genopfyldningslisten hentes fra databasen med en query der kan ses på listing \ref{lst:restock}
+. Listen henter navn og forskellen mellem den ønskede lagebeholdning og den nuværende lagerbeholdning fra \texttt{Components} relationen, hvor den nuværende lagerbeholdning er mindre en minimums lagebeholdningen,
+
+\begin{listing}[!htbp]
+	\begin{minted}{postgresql}
+	SELECT name, prefStock - currentStock AS restockAmount
+	FROM Components
+	WHERE currentStock < minStock
+	\end{minted}
+	\caption{Restock query}
+\label{lst:restock}
+\end{listing}
+
+\section{Manual}
+Use the program by entering one of the following commands into the terminal.
+
+{\ttfamily
+\begin{center}
+\begin{tabular}{ll}
+    0 & List of components and stock. \\ 
+    1 & List of comouter system and how many can be built. \\ 
+    2 & Price list of components and computer systems. \\ 
+    3 & Get a price offer on computer system \\
+    4 & Sell a component and a computer system \\
+    5 & Restock list. \\ 
+\end{tabular}
+\end{center}}
+
+\section{Test}
+\subsection{Test of Trigger}
+To test the trigger, some data is inserted into \texttt{ComputerSystem}, the data i chosen such that they should give all the possible exceptions int the trigger function. The test can be seen on listing \ref{input}.
+
+The output on lising \ref{output} is as expected, all the insertions failed and generated all the possible exceptions.
+
+\begin{listing}[!htbp]
 \begin{minted}{postgresql}
-SELECT min(currentStock)
-FROM ComputerSystems LEFT JOIN Components ON
-ComputerSystems.cpu = Components.id OR
-ComputerSystems.ram = Components.id OR
-ComputerSystems.mainBoard = Components.id OR
-ComputerSystems.computerCase = Components.id OR
-ComputerSystems.gpu = Components.id
-WHERE ComputerSystems.id = 123
-GROUP BY ComputerSystems.id
+/* Input */
+INSERT INTO ComputerSystems (computerSystemName, cpu, mainboard, gpu, ram, computerCase) VALUES
+('BusSpeed exception', 973, 572, NULL, 838, 402);
+INSERT INTO ComputerSystems (computerSystemName, cpu, mainboard, gpu, ram, computerCase) VALUES
+('Formfactor exception', 973, 572, NULL, 640, 402);
+INSERT INTO ComputerSystems (computerSystemName, cpu, mainboard, gpu, ram, computerCase) VALUES
+('Socket exception', 973, 572, NULL, 640, 436);
+INSERT INTO ComputerSystems (computerSystemName, cpu, mainboard, gpu, ram, computerCase) VALUES
+('GPU exeption', 433, 572, NULL, 368, 436);
 \end{minted}
- 
- 
-\begin{minted}{postgresql}
-UPDATE Components
-SET currentStock = currentStock - 1
-FROM ComputerSystems
-WHERE ComputerSystems.id = 123
+\caption{Trigger Test Input}
+\label{input}
+\end{listing}
+
+\begin{listing}[!htbp]
+\begin{minted}{psql}
+/* Output */
+testDB=# \i Tests.sql 
+psql:Tests.sql:7: ERROR:  CPU and RAM bus speed must match
+CONTEXT:  PL/pgSQL function checkinsertoncomputersystem() line 9 at RAISE
+psql:Tests.sql:9: ERROR:  Case form factor and motherboard form factor must match
+CONTEXT:  PL/pgSQL function checkinsertoncomputersystem() line 25 at RAISE
+psql:Tests.sql:11: ERROR:  CPU socket and motherboard socket must match 
+CONTEXT:  PL/pgSQL function checkinsertoncomputersystem() line 33 at RAISE
+psql:Tests.sql:13: ERROR:  A Computer System must have a gpu or a motherboard that has on board graphics
+CONTEXT:  PL/pgSQL function checkinsertoncomputersystem() line 39 at RAISE
+
 \end{minted}
-
-\section{Brugermanual}
-Programmet startes og accepterer input via terminalen eller output konsollen.
-\begin{itemize}
-    \item Input karekteren \texttt{0} for at vise en liste over alle komponenter og tilhørende lagerantal.
-    \item Input \texttt{1} for at vise alle computer systemer og hvor mange der kan bygges af hver.
-    \item Input \texttt{2} for at vise en pris liste over alle komponenter og computer systemer.
-    \item Input \texttt{3} og derfter et computer system identifikationsnummer samt et antal af systemer, for at få vist et pris tilbud.
-    \item Input \texttt{4} for at sælge et computer system eller en komponent.
-
-        \begin{itemize}
-            \item Input \texttt{0} og et id for at sælge en komponent.
-            \item Input \texttt{1} og et id for at sælge et computer system.
-        \end{itemize}
-
-    \item Input \texttt{5} for at vise en liste over komponenter der skal indkøbes flere af og hvor mange der skal købes.
-\end{itemize}
-
-\section{Tests}
+\caption{Trigger Test Output}
+\label{output}
+\end{listing}
 
 \begin{thebibliography}{9}
 
@@ -148,70 +243,72 @@ Programmet startes og accepterer input via terminalen eller output konsollen.
     Pearson.
 
 \end{thebibliography}
+\listoffigures
+\listoflistings
 
 \appendix
 
-\section{Entity Relationship Model}
-\label{appendix:er}
+\section{Relations}
 
-\begin{figure}[htbp!]
-    \centering
-    \includegraphics[width=\textwidth]{ER}
-    \caption{Entity Realtionship Model}
-    \label{fig:er}
-\end{figure}
+\begin{listing}[!htbp]
+    \begin{minted}{postgresql}
+    CREATE TABLE Components (
+        id            INTEGER PRIMARY KEY,
+        componentName TEXT,
+        price         REAL,
+        minStock      INTEGER,
+        prefStock     INTEGER,
+        currentStock  INTEGER
+    );
+    
+    /* The following tables inherits from Component */
+    CREATE TABLE CPUs (
+        id       INTEGER PRIMARY KEY REFERENCES Components (id),
+        busSpeed INTEGER,
+        socket   CPUsockets
+    );
+    
+    CREATE TABLE RAMs (
+        id       INTEGER PRIMARY KEY REFERENCES Components (id),
+        busSpeed INTEGER,
+        ramType  RAMTypes
+    );
+    
+    CREATE TABLE GPUs (
+        id INTEGER PRIMARY KEY REFERENCES Components (id)
+    );
+    
+    CREATE TABLE Mainboards (
+        id         INTEGER PRIMARY KEY REFERENCES Components (id),
+        onBoardGPU BOOLEAN,
+        socket     CPUsockets,
+        formFactor FormFactors,
+        ramType    RAMTypes
+    );
+    
+    CREATE TABLE ComputerCases (
+        id         INTEGER PRIMARY KEY REFERENCES Components (id),
+        formFactor FormFactors
+    );
+    \end{minted}
+    \caption{\texttt{ComputerCases} relation schema}
+    \label{lst:CaseRelation}
+\end{listing}
 
-\section{Realtioner}
-
-\begin{minted}{postgresql}
-CREATE TABLE Components (
-    id              INTEGER PRIMARY KEY,
-    name            TEXT,
-    price           REAL,
-    minStock        INTEGER,
-    prefStock       INTEGER,
-    currentStock    INTEGER
-);
-\end{minted}
-
-\begin{minted}{postgresql}
-CREATE TABLE CPUs (
-    id              INTEGER PRIMARY KEY REFERENCES Components (id),
-    busSpeed        INTEGER,
-    socket          CPUsockets
-);
-CREATE TABLE RAMs (
-    id              INTEGER PRIMARY KEY REFERENCES Components (id),
-    busSpeed        INTEGER,
-    ramType         RAMTypes
-);
-CREATE TABLE GPUs (
-    id              INTEGER PRIMARY KEY REFERENCES Components (id)
-);
-CREATE TABLE Mainboards (
-    id              INTEGER PRIMARY KEY REFERENCES Components (id),
-    hasOnBoardGPU   BOOLEAN,
-    socket          CPUsockets,
-    formFactor      FormFactors,
-    ramType         RAMTypes,
-    busSpeed        INTEGER
-);
-CREATE TABLE ComputerCases (
-    id              INTEGER PRIMARY KEY REFERENCES Components (id),
-    formFactor      FormFactors
-);
-\end{minted}
-
-\begin{minted}{postgresql}
-CREATE TABLE ComputerSystems (
-    id              INTEGER PRIMARY KEY,
-    name            TEXT,
-    cpu             INTEGER REFERENCES CPUs (id),
-    mainboard       INTEGER REFERENCES Mainboards (id),
-    gpu             INTEGER REFERENCES GPUs (id),
-    ram             INTEGER REFERENCES RAMs (id),
-    computerCase    INTEGER REFERENCES ComputerCases (id)
-);
-\end{minted}
+\begin{listing}[!htbp]
+    \begin{minted}{postgresql}
+    CREATE TABLE ComputerSystems (
+        id                 INTEGER PRIMARY KEY,
+        computerSystemName TEXT,
+        cpu                INTEGER REFERENCES CPUs (id)          NOT NULL,
+        mainboard          INTEGER REFERENCES Mainboards (id)    NOT NULL,
+        gpu                INTEGER REFERENCES GPUs (id),
+        ram                INTEGER REFERENCES RAMs (id)          NOT NULL,
+        computerCase       INTEGER REFERENCES ComputerCases (id) NOT NULL
+    );
+    \end{minted}
+    \caption{\texttt{ComputerSystems} relation schema}
+    \label{lst:computersystem}
+\end{listing}
 
 \end{document}

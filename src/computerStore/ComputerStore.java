@@ -1,9 +1,7 @@
 package computerStore;
 
 import java.sql.*;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 @SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve", "ConstantConditions"})
 public class ComputerStore {
@@ -50,13 +48,17 @@ public class ComputerStore {
                     computerStore.printPriceList();
                     break;
                 case 3:
-                    System.out.println("Enter ComputerSystem ID");
+                    System.out.println("Select a computer system");
+                    Map<Integer, String> map = computerStore.findComputerSystems();
+                    map.forEach((k, v) -> {
+                        System.out.println(k + ")\t" + v);
+                    });
                     int id = scanner.nextInt();
 
                     System.out.println("Enter Ampount");
                     int amount = scanner.nextInt();
 
-                    computerStore.getOffer(id, amount);
+                    computerStore.getOffer(map.get(id), amount);
                     break;
                 case 4:
                     System.out.println("What do you want to sell?\n" +
@@ -71,9 +73,13 @@ public class ComputerStore {
                             computerStore.sellComponent(componentId);
                             break;
                         case 1:
-                            System.out.println("Enter ComputerSystem ID");
-                            int computerSystemId = scanner.nextInt();
-                            computerStore.sellComputerSystem(computerSystemId);
+                            System.out.println("Select a Computer System");
+                            Map<Integer, String> map1 = computerStore.findComputerSystems();
+                            map1.forEach((k, v) -> {
+                                System.out.println(k + ")\t" + v);
+                            });
+                            int selection = scanner.nextInt();
+                            computerStore.sellComputerSystem(map1.get(selection));
                             break;
                         default:
                             System.out.println("Please Enter a Valid number");
@@ -88,6 +94,26 @@ public class ComputerStore {
             System.out.println(options);
         }
     }
+
+    private Map<Integer, String> findComputerSystems() {
+        try {
+            ResultSet resultSet = statement.executeQuery(
+                    "SELECT computerSystemName " +
+                            "FROM computerSystems "
+            );
+
+            Map<Integer, String> map = new HashMap<>();
+            int count = 0;
+            while (resultSet.next()) {
+                map.put(count++, resultSet.getString(1));
+            }
+            return map;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     private void sellComponent(int id) {
         try {
@@ -115,30 +141,27 @@ public class ComputerStore {
         }
     }
 
-    private void sellComputerSystem(int id) {
+    private void sellComputerSystem(String name) {
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(
                     "SELECT min(currentStock) " +
-                            "FROM ComputerSystems JOIN Components ON " +
-                            "ComputerSystems.cpu = Components.id OR " +
-                            "ComputerSystems.ram = Components.id OR " +
-                            "ComputerSystems.mainBoard = Components.id OR " +
-                            "ComputerSystems.computerCase = Components.id OR " +
-                            "ComputerSystems.gpu=Components.id " +
-                            "WHERE ComputerSystems.id = ?" +
-                            "GROUP BY ComputerSystems.id"
+                            "FROM ComputerSystems JOIN Components " +
+                            "ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id " +
+                            "WHERE computerSystemName = ?" +
+                            "GROUP BY computerSystemName"
             );
-            preparedStatement.setInt(1, id);
+            preparedStatement.setString(1, name);
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
             if (resultSet.getInt(1) > 0) {
                 PreparedStatement preparedStatement2 = connection.prepareStatement(
                         "UPDATE Components " +
                                 "SET currentStock = currentStock - 1 " +
-                                "FROM ComputerSystems " +
-                                "WHERE ComputerSystems.id = ?"
+                                "WHERE id IN (SELECT id FROM ComputerSystems JOIN Components " +
+                                "ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id " +
+                                "WHERE computerSystemName = ?)"
                 );
-                preparedStatement2.setInt(1, id);
+                preparedStatement2.setString(1, name);
                 preparedStatement2.executeUpdate();
             } else {
                 System.out.println("Component out of stock");
@@ -165,20 +188,16 @@ public class ComputerStore {
         }
     }
 
-    private void getOffer(int computerSystemID, int amount) {
+    private void getOffer(String name1, int amount) {
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(
-                    "SELECT ComputerSystems.name, SUM(price) * 1.3 AS price " +
-                            "FROM ComputerSystems JOIN Components ON " +
-                            "ComputerSystems.cpu = Components.id OR " +
-                            "ComputerSystems.ram = Components.id OR " +
-                            "ComputerSystems.mainBoard = Components.id OR " +
-                            "ComputerSystems.computerCase = Components.id OR " +
-                            "ComputerSystems.gpu = Components.id " +
-                            "WHERE ComputerSystems.id = ? " +
-                            "GROUP BY ComputerSystems.id"
+                    "SELECT computerSystemName, SUM(price) * 1.3 AS price " +
+                            "FROM ComputerSystems JOIN Components " +
+                            "ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id " +
+                            "WHERE computerSystemName = ? " +
+                            "GROUP BY computerSystemName"
             );
-            preparedStatement.setInt(1, computerSystemID);
+            preparedStatement.setString(1, name1);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             String name = null;
@@ -216,8 +235,8 @@ public class ComputerStore {
             for (String table : components) {
 
                 ResultSet resultSet = statement.executeQuery(
-                        "SELECT name, price " +
-                                "FROM " + table + " JOIN Components ON " + table + ".id=Components.id"
+                        "SELECT componentName, price " +
+                                "FROM " + table + " JOIN Components ON " + table + ".id = Components.id"
                 );
                 System.out.print("\n" + table + "\n");
                 while (resultSet.next()) {
@@ -228,13 +247,9 @@ public class ComputerStore {
 
             System.out.println("\nComputerSystems");
             ResultSet resultSet1 = statement.executeQuery(
-                    "SELECT ComputerSystems.name, Components.name, Components.price * 1.3 AS price " +
-                            "FROM ComputerSystems JOIN Components ON " +
-                            "ComputerSystems.cpu = Components.id OR " +
-                            "ComputerSystems.ram = Components.id OR " +
-                            "ComputerSystems.mainBoard = Components.id OR " +
-                            "ComputerSystems.computerCase = Components.id OR " +
-                            "ComputerSystems.gpu = Components.id "
+                    "SELECT computerSystemName, componentName, price * 1.3 AS price " +
+                            "FROM ComputerSystems JOIN Components " +
+                            "ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id "
             );
 
             Set<String> set = new HashSet<>();
@@ -259,7 +274,7 @@ public class ComputerStore {
     private void printComponentStockList() {
         try {
             ResultSet resultSet = statement.executeQuery(
-                    "SELECT name, currentStock FROM Components"
+                    "SELECT componentName, currentStock FROM Components"
             );
             System.out.format("%-48s%16s\n\n", "Name", "Current Stock");
             while (resultSet.next()) {
@@ -273,14 +288,10 @@ public class ComputerStore {
     private void printComputerSystemStockList() {
         try {
             ResultSet resultSet = statement.executeQuery(
-                    "SELECT ComputerSystems.name, min(currentStock) " +
-                            "FROM ComputerSystems JOIN Components ON " +
-                            "ComputerSystems.cpu=Components.id OR " +
-                            "ComputerSystems.ram=Components.id OR " +
-                            "ComputerSystems.mainBoard=Components.id OR " +
-                            "ComputerSystems.computerCase=Components.id OR " +
-                            "ComputerSystems.gpu=Components.id " +
-                            "GROUP BY ComputerSystems.id"
+                    "SELECT computerSystemName, min(currentStock) " +
+                            "FROM ComputerSystems JOIN Components " +
+                            "ON cpu = id OR ram = id OR mainBoard = id OR computerCase = id OR gpu = id " +
+                            "GROUP BY computerSystemName"
             );
             while (resultSet.next()) {
                 System.out.format("%-48s%16d\n", resultSet.getString(1), resultSet.getInt(2));

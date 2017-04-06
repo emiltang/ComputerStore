@@ -2,7 +2,7 @@
 
 -- noinspection SqlNoDataSourceInspectionForFile
 
-INSERT INTO Components (id, name, price, minStock, prefStock, currentStock) VALUES
+INSERT INTO Components (id, componentName, price, minStock, prefStock, currentStock) VALUES
 
   -- RAM
   (640, 'HyperX Fury DDR4 2133MHz 16GB', 1279, 5, 20, 7),
@@ -45,12 +45,12 @@ INSERT INTO ComputerCases (id, formFactor) VALUES
   (402, 'mATX'),
   (436, 'ATX');
 
-INSERT INTO Mainboards (id, hasOnBoardGPU, socket, formFactor, ramType) VALUES
+INSERT INTO Mainboards (id, onBoardGPU, socket, formFactor, ramType) VALUES
   (749, TRUE, 'LGA1151', 'ATX', 'DDR4'),
   (336, TRUE, 'LGA1150', 'mATX', 'DDR3'),
   (572, FALSE, 'AM4', 'ATX', 'DDR4');
 
-INSERT INTO ComputerSystems (id, name, cpu, mainboard, gpu, ram, computerCase) VALUES
-  (688, 'Super Fast Build', 973, 749, NULL, 640, 228),
-  (293, 'Coolmaster masterComputer', 524, 336, NULL, 838, 402),
-  (375, 'AMD Ryzen Rig', 433, 572, 720, 368, 436);
+INSERT INTO ComputerSystems (computerSystemName, cpu, mainboard, gpu, ram, computerCase) VALUES
+  ('Super Fast Build', 973, 749, NULL, 640, 228),
+  ('Coolmaster masterComputer', 524, 336, NULL, 838, 402),
+  ('AMD Ryzen Rig', 433, 572, 720, 368, 436);
