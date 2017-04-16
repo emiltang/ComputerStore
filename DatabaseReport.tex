@@ -42,68 +42,73 @@
 \section{Introduction}
 This report documents the individual exam project in the course \emph{Database Design and Programming}. 
 The course took place on the University of Southern Denmark in the spring semester 2017.
-The subject of this project is to design and develop a database in the database management system Postgresql and a Java interface to interact with the database.  
+The subject of this project is to design and develop, a database in the database-management-system Postgresql and a Java interface to interact with the database.  
 The product should be a system to manage stock and sales in a computer component shop.
 
 \section{Entity Relationship Model}
-The core of ER model is the \emph{Component} entity set, it represents the computer parts that was specified in project description, the entity has the following attributes,
-\emph{componentName}, the name of the component,
-\emph{price}, the components price without counting the extra 30\% selling margin,
-\emph{currentStock}, how many of the component is in the stock,
-\emph{minStock}, the minimum stock amount, if the stock is under this limit when the shop wants refill thier stock, the component will be included,
-\emph{prefStock}, the preferred stock amount, when refilling the stock, components are bought such that the stock reach this level,
-\emph{id}, an identification number to uniquely identify a component, it is also a key.
-
+The core of ER model is the \emph{Component} entity set, it represents the computer parts that was specified in the project description, the entity has the following attributes.
+\begin{itemize}
+    \item \emph{componentName}, the name of the component.
+    \item \emph{price}, the components price without counting the extra 30\% selling margin,
+    \item \emph{currentStock}, how many of the component is in the stock.
+    \item \emph{minStock}, the minimum stock amount. if the stock is under this limit when the shop owner wants to refill his stock, the component will be included.
+    \item \emph{prefStock}, the preferred stock amount when refilling the stock, components are bought such that the stock reach this level.
+    \item \emph{id}, an identification number to uniquely identify a component, it is also a key.
+\end{itemize}
 The \emph{Components} entity set has a number of subclasses, connected by the \emph{isa} relationship. 
 There is a \emph{CPU} subclass with the attributes, bus speed and socket.
 The subclass \emph{RAM} has a type and bus speed.
 \emph{GPU} has no attributes.
-\emph{Case} has a for factor.
-\emph{Motherboard} has a form factor, a socket, a ram type and an attribute called \emph{onBoardGpu} that descries whether a component supports on board graphics.
+\emph{Case} has a form factor.
+\emph{Motherboard} has a form factor, a socket, a ram type and an attribute called \emph{onBoardGpu} that descries whether the component supports on board graphics.
 
-Another entity set is \emph{ComputerSystem}, it represents a collection of components to build complete computer. The entity set has a CPU, a GPU, RAM, a motherboard and a case. Finally is has a name which is also key. The connection from \emph{ComputerSystem} to \emph{Components}, represents the referential constraint that a computer systems components must be in the component relation.
+The second entity set is \emph{ComputerSystem}, it represents a collection of components to build complete computer. The entity set has a CPU, a GPU, RAM, a motherboard and a case. Finally is has a name which is also key. 
 
-%\begin{figure}[!htbp]
-%    \centering
-%    \includesvg[pretex=\footnotesize\ttfamily, png, width=\textwidth]{ER}
-%    \caption{Entity Relationship Model}
-%    \label{fig:er}
-%\end{figure}
+The connection from \emph{ComputerSystem} to \emph{Components}, represents a referential constraint, in this case it means that a computer systems components must also be in the component relation.
+
+\begin{figure}[!htbp]
+    \centering
+    \includesvg[pretex=\footnotesize\ttfamily, png, width=\textwidth]{ER}
+    \caption{Entity Relationship Model}
+    \label{fig:er}
+\end{figure}
 
 \section{Relations}
-The database schemas in system is constructed from the ER model, such that each entity set becomes a relation.
+The database schemas in system is constructed from the ER model such that each entity set becomes a relation.
 The \texttt{Components} relation has an id as the \texttt{PRIMARY KEY}. 
 It also has a name which is a \texttt{TEXT} type, this type is chosen because the length can vary and there is no performance gains compared to \texttt{CHAR}, it only uses more space\footnote{https://www.postgresql.org/docs/current/static/datatype-character.html, \today.}.
 The price is a \texttt{NUMERIC} type, this type is chosen since it is exact. When dealing with money it is important to not lose data.
 The stock attributes and id are \texttt{INTEGER} types.
 
-The sub class relations of \texttt{Component} all have the same key as the super class, their attributes are mostly an enumerated type that is described in section \ref{sec:enum}. 
-There are however a few exceptions, the bus speed attribute is an \texttt{INTEGER} and the onboard graphics attribute is a \texttt{BOOLEAN}. The \texttt{Component} relation and the sub classes can be found in the appendix on listing \ref{lst:CaseRelation}.
+The sub class relations of \texttt{Component} all have the same key as the super class, their attributes are mostly an enumerated type, they are described in section \ref{sec:enum}. 
+There is however a few exceptions, the bus speed attribute is an \texttt{INTEGER} and the onboard graphics attribute is a \texttt{BOOLEAN}. The \texttt{Component} relation and the sub classes can be found in the appendix on listing \ref{lst:CaseRelation}.
 
-The \texttt{ComputerSystem} relation has the name as a \texttt{TEXT} type and \texttt{PRIMARY KEY}. The components attributes are the keys from the \texttt{Components} relation. The schema can be found in the appendix on listing \ref{lst:computersystem}. 
+The \texttt{ComputerSystem} relation has a name as a \texttt{TEXT} type and is a \texttt{PRIMARY KEY}. The components attributes are the keys from the \texttt{Components} relation. The schema can be found in the appendix on listing \ref{lst:computersystem}. 
 
 \subsection{Enumerated Types}
 \label{sec:enum}
-The arritibutes on \texttt{Components}, RAM type, CPU socket and for factor could have been represented in the system as normal character arrays or the \texttt{text} types. 
-In this system the types are chosen to be enumerated types.
-The reasoning for this choice is that it prevents spelling mistakes and ensures that only actual sockets are entered, this is important since there attributes needs to be accurately compared to one another.
+The arritibutes on \texttt{Components}, RAM type, CPU socket and form factor could have been represented in the system as normal character arrays or the \texttt{text} types. 
+In this system these types are enumerated types.
+The reasoning for this choice is that it prevents spelling mistakes and ensures that only vaild sockets are entered, this is important since there attributes needs to be accurately compared to one another.
 The enumerated types used in this system can be seen on listing \ref{enum} in the appendix.
 
 \subsection{Third Normal Form}
-The \texttt{Components} has the functional dependency id that is the a superkey, there are no other keys in this relation. That means we can determine that this relation is both in third normal for and Boyce-Codd normal form.
+The \texttt{Components} has the functional dependency id that is a superkey, there are no other keys in this relation. This means that the relation is in both, third normal form and Boyce-Codd normal form.
 The same reasoning holds for the other relations in the system. 
 
 \section{Constraints}
 A requirement of this project is that a computer system must have a CPU, a mainboard, a case and a RAM component. 
 This constraint is implemented with a foreign key to ensures that the id a valid component of the right type.
-Furthermore a not \texttt{NOT NULL} constraint is used, since a computer system must have these attributes. 
+Furthermore a not \texttt{NOT NULL} constraint is used, since a computer system \emph{must} have these attributes. 
 These constraints are used in the \texttt{ComputerSystems} relationship schema, that can be seen in listing \ref{lst:computersystem} on page \pageref{lst:computersystem}.
 
-Another constraint that needs to be implemented in the system, is that the components in a computer system needs to fit together, for example a CPU and motherboard should have the same socket.
-This constraint is implemented with a trigger that fires on insert in \texttt{ComputerSystems}. The trigger calls the function \texttt{checkInsertOnComputerSystem()} that queries the CPU socket and motherboard socket of an new tuple. If the socket is not equal an exception is raised, with an error message. The function also checks for form factor, ram type and bus speed, it can be seen on listing \ref{lst:trigger}.
+Another constraint that has been implemented in the system, is that the components in a computer system needs to fit together. For example a CPU and motherboard should have the same socket.
+This constraint is implemented with a trigger that fires on insert in \texttt{ComputerSystems}. The trigger calls the function \texttt{checkInsertOnComputerSystem()} that queries the CPU socket and motherboard socket of the tuples. 
+If the socket is not equal an exception is raised and an error message is sent to the user.
+The function also checks for form factor, ram type and bus speed, it can be seen on listing \ref{lst:trigger}.
 
 The last constraint is that a computer system can optionally have a graphics card, however if there is no graphics card the motherboard must support onboard graphics. 
-This check is run in the same function as the other checks, if the  graphics card is null and the query of the motherboards onboard graphics support is \texttt{FALSE}, an exception is raised. 
+This check is run in the same function as the checks mentioned before, if the  graphics card is null and the query of the motherboards onboard graphics support is \texttt{FALSE}, an exception is raised. 
 
 \begin{listing}[!htbp]
 	\begin{minted}{postgresql}
@@ -163,13 +168,13 @@ This check is run in the same function as the other checks, if the  graphics car
 \section{Java Interface}
 
 \subsection{Sale of Computer Systems}
-Before a sale of a computer system can be completed, first the system checks if it is possible to build at least one computer system. 
-The query selects from a join between \texttt{ComputerSystems} and \texttt{Components}, the two tables are joined on all \texttt{ComputerSystems} component attributes and id from \texttt{Components}. 
-Then the lowest stock amount of components for the chosen computer system is selected. 
+Before a sale of a computer system can be completed, the system checks if it is possible to build at least one computer system. 
+The query selects from a join between \texttt{ComputerSystems} and \texttt{Components}, the two tables are joined on all \texttt{ComputerSystems} component attributes and the id from \texttt{Components}. 
+The lowest stock amount of components for the chosen computer system is then selected. 
 The query can be found in listing \ref{lst:salequery}.
 
 If the stock amount is more than one, the sale can be completed. 
-The current stock in \texttt{Comonents} is reduced by one, where the id is in the result of a sub query that gets all the component ids for the computer system.
+The current stock in \texttt{Comonents} is decremented by one, where the id is in the result of a sub query that gets all the component ids for the computer system.
 
 \begin{listing}[!htbp]
     \begin{minted}{postgresql}
@@ -197,7 +202,7 @@ The current stock in \texttt{Comonents} is reduced by one, where the id is in th
 
 \subsection{Restocking}
 
-The restocking list is fetched from the query on listing  \ref{lst:restock}, name and the difference between preferred stock and current stock is selected, from \texttt{Components}, where the current stock is smaller than the minimium stock.
+The restocking list is fetched with the query on listing  \ref{lst:restock}, name and the difference between preferred stock and current stock is selected from \texttt{Components}, where the current stock is smaller than the minimum stock.
 
 \begin{listing}[!htbp]
 	\begin{minted}{postgresql}
@@ -211,9 +216,9 @@ The restocking list is fetched from the query on listing  \ref{lst:restock}, nam
 
 \subsection{Price Offer}
 The price offer query on listing \ref{lst:offer} is similar to the query used to check before a sale of a computer system. This query uses the \texttt{SUM()} function instead. 
-The price also multiplied to get the selling price in the query.
+The price also multiplied to get the selling price.
 
-The rest of the functionality is implemented in Java. The price is rounded to nearest 99 and discount is applied.
+The rest of the functionality is implemented in Java, where the price is rounded to nearest 99 and discount is applied.
 
 \begin{listing}[!htbp]
     \begin{minted}{postgresql}
@@ -243,7 +248,7 @@ Use the program by entering one of the following commands into the terminal.
 
 \section{Test}
 \subsection{Test of Trigger}
-To test the trigger, some data is inserted into \texttt{ComputerSystem}, the data iw chosen such that they should give all the possible exceptions in the trigger function. The test can be seen on listing \ref{input}.
+To test the trigger, test data is inserted into \texttt{ComputerSystem}, the data is chosen such that they should give all the possible exceptions in the trigger function. The test can be seen on listing \ref{input}.
 
 The output on listing \ref{output} is as expected, all the insertions failed and generated all the possible exceptions.
 
